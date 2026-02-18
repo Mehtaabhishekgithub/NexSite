@@ -6,6 +6,7 @@ import {  Coins, PlusIcon } from "lucide-react"
 import axios from 'axios'
 import { serverUrl } from '../App'
 import { setUserData } from '../redux/userSlice'
+import { useNavigate } from 'react-router-dom'
 
 
 
@@ -27,6 +28,7 @@ function Home() {
 const [openLogin, setOpenLogin] = useState(false)
 const {userData} = useSelector(state=>state.user)
 const [openProfile,setOpenProfile]=useState(false)
+const navigate = useNavigate()
 const dispatch = useDispatch()
 
 const handleLogout = async ()=>{
@@ -113,7 +115,9 @@ const handleLogout = async ()=>{
               <span className='font-semibold'><PlusIcon/></span>
                     </button>
 
-                    <button className='w-full px-4 py-3 text-left text-sm
+                    <button
+                    onClick={()=>navigate('/dashboard')}
+                     className='w-full px-4 py-3 text-left text-sm
                     hover:bg-white/5'>DashBoard</button>
 
                     <button
@@ -161,9 +165,10 @@ const handleLogout = async ()=>{
         </motion.p>
 
          <button
+         onClick={()=>navigate('/dashboard')}
           className='px-10 py-4 rounded-xl cursor-pointer
           bg-white text-black font-semibold 
-          hover:scale-105 transition mt-12'> Get Started</button>
+          hover:scale-105 transition mt-12'>{userData?"Go to DashBoard":"Get Started"}</button>
 
 
         
