@@ -1,4 +1,5 @@
 import { generateResponse } from "../config/openRouter.js";
+import User from "../models/user.model.js";
 import Website from "../models/website.model.js";
 import extractJson from "../utils/extractJson.js";
 
@@ -157,9 +158,12 @@ try {
   if(!prompt){
     return res.status(400).json({message:"prompt is required"})
   }
-  const user = req.user
+  const user = await User.findById(req.user._id)
   if(!user){
     return res.status(400).json({message:"User not found"})
+  }
+  if(user.credits<50){
+ return res.status(400).json({message:"you have not enough credit to generate the website "})
   }
 
   const finalPrompt = masterPrompt.replace("{USER_PROMPT}",prompt)
@@ -182,12 +186,142 @@ if(!parsed.code){
 }
 
 const website = await Website.create({
-
+  user:user._id,
+  title:prompt.slice(0,60),
+  latestCode:parsed.code,
+  conversation:[
+    {
+     role:"ai",
+     content:parsed.message
+    },
+    {
+      role:"user",
+     content:prompt
+    }
+  ]
 })
+user.credits = user.credits-50
+await user.save()
 
+return res.status(201).json({
+  websiteId:website._id,
+    remainingCredits:user.credits
+})
   
 } catch (error) {
+return res.status(500).json({message:`generate website error : ${error}`})
+}
+}
+
+
+export const getWebsiteById = async (req,res)=>{
+try {
+  const website = await Website.findOne({
+    _id:req.params.id,
+    user:req.user._id
+  })
+  if(!website){
+    return res.status(400).json({message:"website not found"})
+  }
+   return res.status(200).json(website)
   
+} catch (error) {
+return res.status(500).json({message:`get website by id error : ${error}`})
+}
+}
+
+export const changes = async (req,res)=>{
+  try {
+    const {prompt}= req.body
+  if(!prompt){
+    return res.status(400).json({message:"prompt is required"})
+  }
+
+  const website = await Website.findOne({
+    _id:req.params.id,
+    user:req.user._id
+  })
+  if(!website){
+    return res.status(400).json({message:"website not found"})
+  }
+  
+  const user = await User.findById(req.user._id)
+  if(!user){
+    return res.status(400).json({message:"User not found"})
+  }
+  if(user.credits<25){
+ return res.status(400).json({message:"you have not enough credit to generate the website "})
+  }
+
+  const updatePrompt = `
+UPDATE THIS HTML WEBSITE.
+
+CURRENT CODE:
+${website.latestCode}
+
+USER REQUEST:
+${prompt}
+
+RETURN RAW JSON ONLY:
+{
+  "message": "Short confirmation",
+  "code": "<UPDATED FULL HTML>"
+}
+`
+
+  let raw = ""
+  let parsed = null
+
+  for (let i = 0; i < 2 && !parsed; i++) {
+  raw = await generateResponse(updatePrompt)
+  
+  parsed = await extractJson(raw)
+
+  if(!parsed){
+    raw = await generateResponse(updatePrompt + "\n\nRETURN ONLY RAW JSON.")
+    parsed = await extractJson(raw)
+  }
+}
+if(!parsed.code){
+  console.log("Ai returned invalid response",raw)
+  return res.status(400).json({message:"ai returned invalid response"})
+}
+
+website.conversation.push(
+  {
+    role:"ai",
+    content:parsed.message
+  },
+  {
+    role:"user",
+    content:prompt
+  }
+)
+
+website.latestCode = parsed.code
+ 
+await website.save()
+
+user.credits = user.credits-25
+await user.save()
+
+return res.status(200).json({
+  message:parsed.message,
+  code:parsed.code,
+    remainingCredits:user.credits
+})
+  } catch (error) {
+  return res.status(500).json({message:`update website error ${error}`})
+ }
+}
+
+export const getAll = async (req,res)=>{
+try {
+  const websites = await Website.find({user:req.user._id})
+  return res.status(200).json(websites)
+} catch (error) {
+    return res.status(500).json({message:`get all websites error ${error}`})
+
 }
 }
 
