@@ -209,6 +209,7 @@ return res.status(201).json({
 })
   
 } catch (error) {
+  console.log(error)
 return res.status(500).json({message:`generate website error : ${error}`})
 }
 }
@@ -288,13 +289,13 @@ if(!parsed.code){
 }
 
 website.conversation.push(
+{
+    role:"user",
+    content:prompt
+  },
   {
     role:"ai",
     content:parsed.message
-  },
-  {
-    role:"user",
-    content:prompt
   }
 )
 
