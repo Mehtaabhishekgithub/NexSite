@@ -1,7 +1,11 @@
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Check, Coins } from 'lucide-react';
 import React from 'react'
 import { useNavigate } from 'react-router-dom';
 import { motion } from "motion/react"
+import { useSelector } from 'react-redux';
+import axios from 'axios';
+import { serverUrl } from '../App';
+import { useState } from 'react';
 
 export const plans = [
   {
@@ -9,7 +13,7 @@ export const plans = [
     name: "Free",
     price: "₹0",
     credits: 100,
-    description: "Perfect for trying out the NexSite.",
+    description: "Perfect for trying out the NexSite and also create and deploy websites.",
     features: [
       "100 AI credits",
       "Basic website generation",
@@ -58,6 +62,28 @@ export const plans = [
 
 function Pricing() {
   const navigate = useNavigate()
+  const [loading, setLoading] = useState(null)
+  const {userData}=useSelector(state=>state.user)
+
+  const handleBuy = async (plankey)=> {
+  if(!userData){
+      navigate('/')
+      return
+    }
+  if(plankey == "free"){
+    navigate('/dashboard')
+    return
+  } 
+  setLoading(plankey)
+  try {
+    const result = await axios.post(`${serverUrl}/api/billing`,{planType:plankey},{withCredentials:true})
+    window.location.href = result.data.sessionUrl
+  } catch (error) {
+    console.log(error)
+    setLoading(null)
+  }
+
+  }
   return (
     <div className='relative min-h-screen overflow-hidden 
     bg-[#050505] text-white px-6 pt-16 pb-24'>
@@ -98,8 +124,47 @@ function Pricing() {
           : "border-white/10 bg-white/5 hover:border-indigo-400 hover:bg-white/10"
       }`}
   >
-    {/* content here */}
-    <span></span>
+    {p.popular && (
+    <span className='absolute top-5 right-5 px-3 py-1 text-xs rounded-full 
+    bg-indigo-500'>Most Popular</span> )}
+    <h1 className='text-xl font-semibold mb-2'>{p.name}</h1>
+    <p className='text-zinc-400 mb-6 text-sm '>{p.description}</p>
+
+    <div className='flex items-end gap-1 mb-4'>
+      <span className='text-4xl font-bold'>{p.price}</span>
+      <span className='text-sm text-zinc-400 mb-1'>/one-time</span>
+    </div>
+
+    <div className='flex items-center gap-2 mb-8'>
+      <Coins size={18} className='text-yellow-400' />
+      <span className='font-sm'>{p.credits} Credits</span>
+    </div>
+
+    <ul className='space-y-3 mb-10'>
+      {p.features.map((f)=>(
+        <li
+        className='flex items-center gap-2 text-sm text-zinc-300'
+         key={f}>
+          <Check size={16} color='green'/>
+          {f}
+        </li>
+      ))}
+    </ul>
+   
+    <motion.button
+    disabled={loading}
+    onClick={()=>handleBuy(p.key)}
+    whileTap={{scale:0.96}} 
+    className={`w-full py-3 rounded-xl font-semibold transition
+      ${p.popular ? "bg-indigo-500 hover:bg-indigo-600":"bg-white/10 hover:bg-white/20"}
+      disabled:opacity-60`}
+    >
+      {loading===p.key ? "Redirecting...":p.button}
+   
+    </motion.button>
+
+
+
   </motion.div>
 ))}
        </div>

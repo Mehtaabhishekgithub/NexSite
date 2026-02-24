@@ -45,8 +45,9 @@ const handleLogout = async ()=>{
 
 
   return (
+    
     <div className='relative min-h-screen bg-[#040404] text-white overflow-hidden'>
-
+        
       <motion.div 
       initial={{y:-40,opacity:0}}
       animate={{y:0,opacity:1}}
