@@ -17,15 +17,25 @@ const res = await fetch(openRouterUrl, {
     messages: [
       {
           role:"system",
-          content:"You must return ONLY valid raw JSON."
+          content: `
+          You are a professional website generator.
+
+            STRICT RULES:
+         - Return ONLY valid raw JSON.
+        - The "code" field must contain BEAUTIFULLY FORMATTED HTML.
+        - Use proper indentation and line breaks.
+        - DO NOT minify the code.
+        - Code must be human readable like VS Code formatted.
+         - Use 2-space indentation.`
       },
       {
         role: 'user',
         content: prompt,
       },
     ],
-    temperature:0.2
-  }),
+    temperature:0.2,
+     max_tokens: 3000
+}),
 });
 if(!res.ok){
   const err = await res.text()

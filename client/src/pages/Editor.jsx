@@ -53,6 +53,22 @@ function WebsiteEditor() {
     }
   }
 
+  const handleDeploy = async () => {
+    try {
+      const result = await axios.get(
+        `${serverUrl}/api/website/deploy/${website._id}`,
+        { withCredentials: true }
+      );
+  
+      // open deployed site
+      window.open(result.data.url, "_blank");
+  
+      
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   useEffect(()=>{
     if(!updateLoading) return;
     const i = setInterval(() => {
@@ -110,7 +126,8 @@ function WebsiteEditor() {
     <div className='h-screen w-screen flex bg-black text-white overflow-hidden'>
       <aside className='hidden lg:flex w-[380px]
       flex-col border-r border-white/10 bg-black/80'>
-        <Header onclose={()=>setShowChat(false)} />
+        
+        <Header />
 
     <>
      <div className='flex-1 overflow-y-auto px-4 py-4 space-y-4'>
@@ -168,9 +185,13 @@ bg-white/5 border border-white/5 text-zinc-400 italic'>{thinkingSteps[thinkingIn
           border-b border-white/10 bg-black/80'>
             <span className='text-xs text-zinc-500'>Live Preview</span>
          <div className='flex gap-2'>
-          <button className='flex items-center gap-2 px-4 py-1.5 rounded-lg bg-linear-to-r from-indigo-500
+         {website.deployed ?"":
+           <button
+          onClick={handleDeploy}
+           className='flex items-center gap-2 px-4 py-1.5 rounded-lg bg-linear-to-r from-indigo-500
          to-purple-500 text-sm font-semibold hover:scale-105 transition' ><Rocket size={14}/>Deploy</button>
-
+}
+        
           <button
           onClick={()=>setShowChat(true)}
            className='p-2 lg:hidden'>
@@ -186,8 +207,9 @@ bg-white/5 border border-white/5 text-zinc-400 italic'>{thinkingSteps[thinkingIn
       </div>
 
       <iframe ref={iframeRef}
-         className='flex-1 w-full bg-white'/>
-
+         className='flex-1 w-full bg-white'
+         sandbox='allow-scripts allow-same-origin allow-forms'/>
+        
       </div>
 
       <AnimatePresence>
@@ -198,7 +220,7 @@ bg-white/5 border border-white/5 text-zinc-400 italic'>{thinkingSteps[thinkingIn
           exit={{y:"100%"}}
           className='fixed inset-0 z-[9999] bg-black flex flex-col'
           >
-            <Header onclose={() => setShowChat(false)} />
+            <Header  onclose={()=>setShowChat(false)}/>
 
             <>
      <div className='flex-1 overflow-y-auto px-4 py-4 space-y-4'>
@@ -267,11 +289,19 @@ bg-white/5 border border-white/5 text-zinc-400 italic'>{thinkingSteps[thinkingIn
             <span className='text-sm font-medium'>index.html</span>
             <button onClick={()=>setShowCode(false)}><X size={18}/></button>
             </div>
-            <Editor
+              <Editor
             theme='vs-dark'
             value={code}
             language='html'
-            onChange={(v)=>setCode(v)}
+            onChange={(v)=>setCode(v || "")}
+             options={{
+           wordWrap: "on",          // ⭐ THIS FIXES IT
+           minimap: { enabled: false },
+          scrollBeyondLastLine: false,
+            fontSize: 14,
+             formatOnPaste: true,
+           formatOnType: true,
+              }}
             /> 
           
            </motion.div>
@@ -283,7 +313,9 @@ bg-white/5 border border-white/5 text-zinc-400 italic'>{thinkingSteps[thinkingIn
           <motion.div
           className='fixed inset-0 z-[9999] bg-black'
           >
-            <iframe className='w-full h-full bg-white ' srcDoc={code} />
+            <iframe
+            sandbox='allow-scripts allow-same-origin allow-forms'
+             className='w-full h-full bg-white ' srcDoc={code} />
             <button
             onClick={()=>setShowFullPreview(false)}
              className='absolute top-4 right-4 p-2
@@ -294,8 +326,7 @@ bg-white/5 border border-white/5 text-zinc-400 italic'>{thinkingSteps[thinkingIn
       </AnimatePresence>
 
 </div>
-
-  )
+)
   function Header ({onclose}) {
 return (
   <div className='h-14 px-4 flex items-center justify-between

@@ -1,4 +1,4 @@
-import { ArrowLeft, Plus, Rocket, Share2 } from 'lucide-react';
+import { ArrowLeft, Check, Plus, Rocket, Share2 } from 'lucide-react';
 import React, { useContext, useEffect, useState } from 'react'
 import { motion } from "motion/react"
 import { useSelector } from 'react-redux';
@@ -12,13 +12,39 @@ function Dashboard() {
   const [websites, setWebsites] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [copiedId, setCopiedId] = useState(null)
+
+const handleDeploy = async (id) => {
+  try {
+    const result = await axios.get(
+      `${serverUrl}/api/website/deploy/${id}`,
+      { withCredentials: true }
+    );
+
+    // open deployed site
+    window.open(result.data.url, "_blank");
+
+    // update local state
+    setWebsites((prev) =>
+      prev.map((w) =>
+        w._id === id
+          ? { ...w, deployed: true, deployUrl: result.data.url }
+          : w
+      )
+    );
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+
+
   useEffect(()=>{
      const handleGetAllWebsites = async () =>{
       setLoading(true)
        try {
         const result = await axios.get(`${serverUrl}/api/website/get-all`,{withCredentials:true})
         setWebsites(result.data || [])
-        console.log(result.data)
         setLoading(false)
        } catch (error) {
         console.log(error)
@@ -28,6 +54,13 @@ function Dashboard() {
      }
      handleGetAllWebsites()
   },[])
+
+const handleCopy = async (site) =>{
+ await navigator.clipboard.writeText(site.deployUrl)
+ setCopiedId(site._id)
+ setTimeout(() => setCopiedId(null),2000);
+}
+
   return (
  <div className="min-h-screen bg-[#050505]  text-white">
   
@@ -79,9 +112,11 @@ function Dashboard() {
 
           {!loading && !error && websites?.length>0 &&(
             <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8'>
-             {websites.map((w,i)=>(
-              <motion.div 
+             {websites.map((w,i)=>{
+             const copied = copiedId === w._id
+             return <motion.div 
               key={i}
+              onClick={()=>navigate(`/editor/${w._id}`)}
               initial={{opacity:0,y:20}}
               animate={{opacity:1,y:0}}
               transition={{delay:i * 0.05}}
@@ -108,16 +143,47 @@ function Dashboard() {
                </p>
                 </div>
                 {!w.deployed ?(
-                  <button className='mt-auto mx-4 mb-4 flex items-center justify-center
+                  <button 
+                  onClick={(e) => {
+                 e.stopPropagation();
+                handleDeploy(w._id);
+                          }}
+                  className='mt-auto mx-4 mb-4 flex items-center justify-center
                   gap-2 px-4 py-2 rounded-xl text-sm font-semibold
                   bg-gradient-to-r from-indigo-500 to-purple-500
                   hover:scale-105 transition'><Rocket size={18}/> Deploy</button>
-                ):(<button>
-                  <Share2/> Share Link
-                </button>) }
+                ):( <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={(e) => {
+            e.stopPropagation();
+             handleCopy(w);
+                      }}
+                 className={`mt-auto mx-4 mb-4 flex items-center justify-center gap-2
+              px-4 py-2 rounded-xl text-sm font-medium transition-all
+               ${
+              copied
+                 ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+               : "bg-white/10"
+                 }`}
+                  >
+               {
+                copied?(
+                  <>
+                  <Check size={14}/>
+                  Link Copied
+                  </>
+                ):<>
+                <Share2 size={14}/>
+                Share Link
+                </>
+               }
+
+
+               
+                </motion.button>) }
 
               </motion.div>
-             ))}
+             })}
             </div>
           )}
    </div>
