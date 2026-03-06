@@ -21,7 +21,7 @@ const port = process.env.PORT || 5000
 app.use(express.json())
 app.use(cookieParser())
 app.use(cors({
-  origin:"https://nexsite-1.onrender.com",
+  origin:"https://nexsite-12.onrender.com",
   credentials:true
 }))
 app.use("/api/auth",authRouter) 
