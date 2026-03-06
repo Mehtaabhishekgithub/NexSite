@@ -8,7 +8,7 @@ import Generate from './pages/Generate'
 import WebsiteEditor from './pages/Editor'
 import LiveSite from './pages/LiveSite'
 import Pricing from './pages/Pricing'
-export const serverUrl = "https://nexsite-nu2f.onrender.com"
+export const serverUrl = "https://nexsite-server.onrender.com"
 
 function App() {
   useGetCurrentUser()
